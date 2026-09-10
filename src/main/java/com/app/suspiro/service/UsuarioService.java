@@ -23,13 +23,11 @@ import com.app.suspiro.security.SecurityAuth;
 public class UsuarioService implements UserDetailsService {
 
 
+
     private static final Map<Perfil, Set<Perfil>> PERFIS_PERMITIDOS = Map.of(
             Perfil.SUPER_ADMIN,
             EnumSet.of(
-                    Perfil.GERENTE,
-                    Perfil.MEDICO,
-                    Perfil.ENFERMEIRO,
-                    Perfil.ATENDENTE
+                    Perfil.GERENTE
             ),
             Perfil.GERENTE,
             EnumSet.of(
