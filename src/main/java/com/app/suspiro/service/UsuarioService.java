@@ -4,6 +4,8 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -115,6 +117,19 @@ public class UsuarioService implements UserDetailsService {
         emailService.enviarPrimeiroAcesso(salvo, senha);
 
         return salvo;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UsuariosModel> listar(Perfil perfilDoSolicitante, Pageable paginacao) {
+
+        Set<Perfil> visiveis =
+                PERFIS_PERMITIDOS.getOrDefault(perfilDoSolicitante, Set.of());
+
+        if (visiveis.isEmpty()) {
+            return Page.empty(paginacao);
+        }
+
+        return usuariosRepository.findByPerfilIn(visiveis, paginacao);
     }
 
     @Transactional

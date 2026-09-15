@@ -1,24 +1,30 @@
 package com.app.suspiro.service;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.Optional;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.Mockito;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -181,7 +187,7 @@ class UsuarioServiceTest {
                 service.cadastrar(request(Perfil.GERENTE), Perfil.SUPER_ADMIN));
     }
 
-    // ---------- troca de senha ----------
+
 
     private UsuariosModel usuarioComSenha(String senha) {
 
@@ -251,5 +257,60 @@ class UsuarioServiceTest {
                 ));
 
         verify(repository, never()).save(any(UsuariosModel.class));
+    }
+
+    private Collection<Perfil> perfisConsultados(Pageable paginacao) {
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Collection<Perfil>> perfis =
+                ArgumentCaptor.forClass(Collection.class);
+
+        verify(repository).findByPerfilIn(perfis.capture(), eq(paginacao));
+
+        return perfis.getValue();
+    }
+
+    @Test
+    void gerenteEnxergaApenasOsFuncionariosQueGerencia() {
+
+        Pageable paginacao = PageRequest.of(0, 20);
+
+        when(repository.findByPerfilIn(any(), eq(paginacao)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        service.listar(Perfil.GERENTE, paginacao);
+
+        assertEquals(
+                Set.of(Perfil.MEDICO, Perfil.ENFERMEIRO, Perfil.ATENDENTE),
+                Set.copyOf(perfisConsultados(paginacao))
+        );
+    }
+
+    @Test
+    void superAdminEnxergaApenasGerentes() {
+
+        Pageable paginacao = PageRequest.of(0, 20);
+
+        when(repository.findByPerfilIn(any(), eq(paginacao)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        service.listar(Perfil.SUPER_ADMIN, paginacao);
+
+        assertEquals(
+                Set.of(Perfil.GERENTE),
+                Set.copyOf(perfisConsultados(paginacao))
+        );
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = Perfil.class,
+            names = {"MEDICO", "ENFERMEIRO", "ATENDENTE"})
+    void demaisPerfisNaoEnxergamNinguem(Perfil perfil) {
+
+        Page<UsuariosModel> resultado =
+                service.listar(perfil, PageRequest.of(0, 20));
+
+        assertTrue(resultado.isEmpty());
+        verify(repository, never()).findByPerfilIn(any(), any());
     }
 }
