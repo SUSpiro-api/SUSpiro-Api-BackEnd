@@ -42,6 +42,9 @@ public class UsuariosModel {
     @Column(nullable = false)
     private boolean ativo = true;
 
+    @Column(name = "senha_provisoria", nullable = false)
+    private boolean senhaProvisoria = false;
+
     @Column(name = "criado_em", nullable = false)
     private LocalDateTime criadoEm;
 
@@ -113,6 +116,14 @@ public class UsuariosModel {
 
     public void setAtivo(boolean ativo) {
         this.ativo = ativo;
+    }
+
+    public boolean isSenhaProvisoria() {
+        return senhaProvisoria;
+    }
+
+    public void setSenhaProvisoria(boolean senhaProvisoria) {
+        this.senhaProvisoria = senhaProvisoria;
     }
 
     public LocalDateTime getCriadoEm() {

@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.app.suspiro.dto.TrocaDeSenhaRequest;
 import com.app.suspiro.dto.UsuarioCadastroRequest;
 import com.app.suspiro.enums.Perfil;
 import com.app.suspiro.exception.RegraDeNegocioException;
@@ -22,8 +23,6 @@ import com.app.suspiro.util.GeradorDeSenha;
 
 @Service
 public class UsuarioService implements UserDetailsService {
-
-
 
     private static final Map<Perfil, Set<Perfil>> PERFIS_PERMITIDOS = Map.of(
             Perfil.SUPER_ADMIN,
@@ -109,12 +108,36 @@ public class UsuarioService implements UserDetailsService {
         usuario.setSenha(passwordEncoder.encode(senha));
         usuario.setPerfil(request.getPerfil());
         usuario.setAtivo(true);
+        usuario.setSenhaProvisoria(true);
 
         UsuariosModel salvo = usuariosRepository.save(usuario);
 
         emailService.enviarPrimeiroAcesso(salvo, senha);
 
         return salvo;
+    }
+
+    @Transactional
+    public void trocarSenha(String cpf, TrocaDeSenhaRequest request) {
+
+        UsuariosModel usuario = buscarPorCpf(cpf);
+
+        if (!passwordEncoder.matches(request.getSenhaAtual(), usuario.getSenha())) {
+
+            throw new RegraDeNegocioException("A senha atual está incorreta");
+        }
+
+        if (passwordEncoder.matches(request.getNovaSenha(), usuario.getSenha())) {
+
+            throw new RegraDeNegocioException(
+                    "A nova senha deve ser diferente da senha atual"
+            );
+        }
+
+        usuario.setSenha(passwordEncoder.encode(request.getNovaSenha()));
+        usuario.setSenhaProvisoria(false);
+
+        usuariosRepository.save(usuario);
     }
 
     private void validarHierarquia(Perfil perfilDoCriador, Perfil perfilDesejado) {

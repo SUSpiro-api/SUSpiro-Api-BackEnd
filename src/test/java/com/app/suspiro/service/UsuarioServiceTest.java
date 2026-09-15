@@ -1,6 +1,7 @@
 package com.app.suspiro.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -9,6 +10,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +23,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.app.suspiro.dto.TrocaDeSenhaRequest;
 import com.app.suspiro.dto.UsuarioCadastroRequest;
 import com.app.suspiro.enums.Perfil;
 import com.app.suspiro.exception.EnvioDeEmailException;
@@ -151,6 +155,15 @@ class UsuarioServiceTest {
     }
 
     @Test
+    void usuarioNasceComSenhaProvisoria() {
+
+        UsuariosModel salvo =
+                service.cadastrar(request(Perfil.GERENTE), Perfil.SUPER_ADMIN);
+
+        assertTrue(salvo.isSenhaProvisoria());
+    }
+
+    @Test
     void cpfDuplicadoEhRejeitado() {
 
         when(repository.existsByCpf(anyString())).thenReturn(true);
@@ -166,5 +179,77 @@ class UsuarioServiceTest {
 
         assertThrows(RegraDeNegocioException.class, () ->
                 service.cadastrar(request(Perfil.GERENTE), Perfil.SUPER_ADMIN));
+    }
+
+    // ---------- troca de senha ----------
+
+    private UsuariosModel usuarioComSenha(String senha) {
+
+        UsuariosModel usuario = new UsuariosModel();
+
+        usuario.setCpf("12345678901");
+        usuario.setNome("Fulano de Tal");
+        usuario.setEmail("fulano@exemplo.com");
+        usuario.setSenha(passwordEncoder.encode(senha));
+        usuario.setPerfil(Perfil.GERENTE);
+        usuario.setAtivo(true);
+        usuario.setSenhaProvisoria(true);
+
+        when(repository.findByCpf("12345678901")).thenReturn(Optional.of(usuario));
+
+        return usuario;
+    }
+
+    private TrocaDeSenhaRequest trocaDeSenha(String atual, String nova) {
+
+        TrocaDeSenhaRequest request = new TrocaDeSenhaRequest();
+
+        request.setSenhaAtual(atual);
+        request.setNovaSenha(nova);
+
+        return request;
+    }
+
+    @Test
+    void trocaDeSenhaGravaONovoHashELimpaAFlagProvisoria() {
+
+        UsuariosModel usuario = usuarioComSenha("SenhaAntiga1!");
+
+        service.trocarSenha(
+                "12345678901",
+                trocaDeSenha("SenhaAntiga1!", "SenhaNova2@")
+        );
+
+        assertTrue(passwordEncoder.matches("SenhaNova2@", usuario.getSenha()));
+        assertFalse(usuario.isSenhaProvisoria());
+        verify(repository).save(usuario);
+    }
+
+    @Test
+    void trocaDeSenhaExigeASenhaAtualCorreta() {
+
+        usuarioComSenha("SenhaAntiga1!");
+
+        assertThrows(RegraDeNegocioException.class, () ->
+                service.trocarSenha(
+                        "12345678901",
+                        trocaDeSenha("SenhaErrada1!", "SenhaNova2@")
+                ));
+
+        verify(repository, never()).save(any(UsuariosModel.class));
+    }
+
+    @Test
+    void novaSenhaNaoPodeSerIgualAAtual() {
+
+        usuarioComSenha("SenhaAntiga1!");
+
+        assertThrows(RegraDeNegocioException.class, () ->
+                service.trocarSenha(
+                        "12345678901",
+                        trocaDeSenha("SenhaAntiga1!", "SenhaAntiga1!")
+                ));
+
+        verify(repository, never()).save(any(UsuariosModel.class));
     }
 }

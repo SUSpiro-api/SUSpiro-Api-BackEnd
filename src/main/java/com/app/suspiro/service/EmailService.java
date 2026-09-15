@@ -70,10 +70,11 @@ public class EmailService {
 
                 Endereço: %s
                 CPF (login): %s
-                Senha: %s
+                Senha provisória: %s
 
-                Esta senha foi gerada pelo sistema. Guarde-a em local seguro e
-                não a compartilhe com ninguém.
+                Esta senha foi gerada pelo sistema e serve apenas para o primeiro
+                acesso: ao entrar, você será solicitado a cadastrar uma nova senha,
+                e só depois disso o sistema será liberado.
 
                 Este é um e-mail automático, não responda.
                 """.formatted(

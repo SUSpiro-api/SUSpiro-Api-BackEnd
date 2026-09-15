@@ -25,14 +25,18 @@ public class SecurityConfig {
 
     private final UsuarioService usuarioService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final SenhaProvisoriaFilter senhaProvisoriaFilter;
     private final PasswordEncoder passwordEncoder;
 
     public SecurityConfig(
             UsuarioService usuarioService,
-            JwtAuthenticationFilter jwtAuthenticationFilter, PasswordEncoder passwordEncoder) {
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            SenhaProvisoriaFilter senhaProvisoriaFilter,
+            PasswordEncoder passwordEncoder) {
 
         this.usuarioService = usuarioService;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.senhaProvisoriaFilter = senhaProvisoriaFilter;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -84,6 +88,11 @@ public class SecurityConfig {
             .addFilterBefore(
                 jwtAuthenticationFilter,
                 UsernamePasswordAuthenticationFilter.class
+            )
+
+            .addFilterAfter(
+                senhaProvisoriaFilter,
+                JwtAuthenticationFilter.class
             );
 
         return http.build();
