@@ -18,6 +18,7 @@ import com.app.suspiro.exception.RegraDeNegocioException;
 import com.app.suspiro.model.UsuariosModel;
 import com.app.suspiro.repository.UsuariosRepository;
 import com.app.suspiro.security.SecurityAuth;
+import com.app.suspiro.util.GeradorDeSenha;
 
 @Service
 public class UsuarioService implements UserDetailsService {
@@ -39,11 +40,16 @@ public class UsuarioService implements UserDetailsService {
 
     private final UsuariosRepository usuariosRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
-    public UsuarioService(UsuariosRepository usuariosRepository, PasswordEncoder passwordEncoder) {
+    public UsuarioService(
+            UsuariosRepository usuariosRepository,
+            PasswordEncoder passwordEncoder,
+            EmailService emailService) {
 
         this.usuariosRepository = usuariosRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     @Override
@@ -86,23 +92,29 @@ public class UsuarioService implements UserDetailsService {
 
         String email = normalizarEmail(request.getEmail());
 
-        if (email != null && usuariosRepository.existsByEmail(email)) {
+        if (usuariosRepository.existsByEmail(email)) {
 
             throw new RegraDeNegocioException(
                     "Já existe um usuário cadastrado com este e-mail"
             );
         }
 
+        String senha = GeradorDeSenha.gerar();
+
         UsuariosModel usuario = new UsuariosModel();
 
         usuario.setCpf(request.getCpf());
         usuario.setEmail(email);
         usuario.setNome(request.getNome().trim());
-        usuario.setSenha(passwordEncoder.encode(request.getSenha()));
+        usuario.setSenha(passwordEncoder.encode(senha));
         usuario.setPerfil(request.getPerfil());
         usuario.setAtivo(true);
 
-        return usuariosRepository.save(usuario);
+        UsuariosModel salvo = usuariosRepository.save(usuario);
+
+        emailService.enviarPrimeiroAcesso(salvo, senha);
+
+        return salvo;
     }
 
     private void validarHierarquia(Perfil perfilDoCriador, Perfil perfilDesejado) {
@@ -121,10 +133,6 @@ public class UsuarioService implements UserDetailsService {
     }
 
     private String normalizarEmail(String email) {
-
-        if (email == null || email.isBlank()) {
-            return null;
-        }
 
         return email.trim().toLowerCase();
     }

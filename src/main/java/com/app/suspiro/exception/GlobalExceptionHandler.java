@@ -31,6 +31,17 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(EnvioDeEmailException.class)
+    public ResponseEntity<Map<String, Object>> tratarEnvioDeEmail(
+            EnvioDeEmailException ex) {
+
+        return montarResposta(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "Não foi possível enviar o e-mail de primeiro acesso. "
+                        + "O cadastro não foi concluído, tente novamente."
+        );
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> tratarValidacao(
             MethodArgumentNotValidException ex) {
