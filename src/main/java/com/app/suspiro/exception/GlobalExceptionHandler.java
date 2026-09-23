@@ -21,6 +21,13 @@ public class GlobalExceptionHandler {
         return montarResposta(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    @ExceptionHandler(RecursoNaoEncontradoException.class)
+    public ResponseEntity<Map<String, Object>> tratarNaoEncontrado(
+            RecursoNaoEncontradoException ex) {
+
+        return montarResposta(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> tratarAcessoNegado(
             AccessDeniedException ex) {

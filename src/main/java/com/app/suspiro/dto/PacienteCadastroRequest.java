@@ -2,9 +2,11 @@ package com.app.suspiro.dto;
 
 import java.time.LocalDate;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 public class PacienteCadastroRequest {
 
@@ -23,6 +25,10 @@ public class PacienteCadastroRequest {
     private String numeroSus;
 
     private String telefone;
+
+    @Email(message = "E-mail inválido")
+    @Size(max = 255, message = "O e-mail deve ter no máximo 255 caracteres")
+    private String email;
 
     public String getNome() {
     return nome;
@@ -62,6 +68,14 @@ public class PacienteCadastroRequest {
 
     public void setTelefone(String telefone) {
 	this.telefone = telefone;
-    } 
+    }
+
+    public String getEmail() {
+	return email;
+    }
+
+    public void setEmail(String email) {
+	this.email = email;
+    }
 
     }

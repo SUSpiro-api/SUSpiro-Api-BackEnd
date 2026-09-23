@@ -4,8 +4,9 @@ import com.app.suspiro.model.PacientesModel;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
+import java.util.UUID;
 
-public interface PacientesRepository extends JpaRepository<PacientesModel, Long> {
+public interface PacientesRepository extends JpaRepository<PacientesModel, UUID> {
 
     boolean existsByCpf(String cpf);
 

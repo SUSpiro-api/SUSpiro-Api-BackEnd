@@ -1,5 +1,7 @@
 package com.app.suspiro.controller;
 
+import java.util.UUID;
+
 import com.app.suspiro.dto.PacienteCadastroRequest;
 import com.app.suspiro.model.PacientesModel;
 import com.app.suspiro.service.PacienteService;
@@ -30,8 +32,15 @@ public class PacienteController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PacientesModel> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<PacientesModel> buscarPorId(@PathVariable UUID id) {
         PacientesModel paciente = pacienteService.buscarPorId(id);
+
+        return ResponseEntity.ok(paciente);
+    }
+
+    @GetMapping(params = "cpf")
+    public ResponseEntity<PacientesModel> buscarPorCpf(@RequestParam String cpf) {
+        PacientesModel paciente = pacienteService.buscarPorCpf(cpf.replaceAll("\\D", ""));
 
         return ResponseEntity.ok(paciente);
     }
