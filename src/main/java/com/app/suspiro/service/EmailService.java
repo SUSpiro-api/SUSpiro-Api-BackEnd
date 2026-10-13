@@ -43,12 +43,42 @@ public class EmailService {
 
     public void enviarPrimeiroAcesso(UsuariosModel usuario, String senha) {
 
+        enviarSenhaProvisoria(
+                usuario,
+                senha,
+                "primeiro acesso",
+                "SUSpiro - dados do seu primeiro acesso",
+                "Sua conta no SUSpiro foi criada."
+        );
+    }
+
+    public void enviarRedefinicaoDeSenha(UsuariosModel usuario, String senha) {
+
+        enviarSenhaProvisoria(
+                usuario,
+                senha,
+                "redefinição de senha",
+                "SUSpiro - redefinição de senha",
+                """
+                Recebemos um pedido para redefinir a sua senha do SUSpiro.
+                A senha anterior deixou de valer. Se não foi você quem pediu,
+                entre com a senha abaixo e cadastre uma nova."""
+        );
+    }
+
+    private void enviarSenhaProvisoria(
+            UsuariosModel usuario,
+            String senha,
+            String motivo,
+            String assunto,
+            String introducao) {
+
         SimpleMailMessage mensagem = new SimpleMailMessage();
 
         mensagem.setFrom(remetente);
         mensagem.setTo(usuario.getEmail());
-        mensagem.setSubject("SUSpiro - dados do seu primeiro acesso");
-        mensagem.setText(montarCorpo(usuario, senha));
+        mensagem.setSubject(assunto);
+        mensagem.setText(montarCorpo(usuario, senha, introducao));
 
         try {
 
@@ -57,39 +87,40 @@ public class EmailService {
         } catch (MailException e) {
 
             log.error(
-                    "Falha ao enviar o e-mail de primeiro acesso do usuário {}",
-                    usuario.getCpf(), e
+                    "Falha ao enviar o e-mail de {} do usuário {}",
+                    motivo, usuario.getCpf(), e
             );
 
             throw new EnvioDeEmailException(
-                    "Não foi possível enviar o e-mail de primeiro acesso", e
+                    "Não foi possível enviar o e-mail de " + motivo, e
             );
         }
 
         log.info(
-                "E-mail de primeiro acesso enviado para o usuário {}",
-                usuario.getCpf()
+                "E-mail de {} enviado para o usuário {}",
+                motivo, usuario.getCpf()
         );
     }
 
-    private String montarCorpo(UsuariosModel usuario, String senha) {
+    private String montarCorpo(UsuariosModel usuario, String senha, String introducao) {
 
         return """
                 Olá, %s!
 
-                Sua conta no SUSpiro foi criada.
+                %s
 
                 Endereço: %s
                 CPF (login): %s
                 Senha provisória: %s
 
-                Esta senha foi gerada pelo sistema e serve apenas para o primeiro
+                Esta senha foi gerada pelo sistema e serve apenas para o próximo
                 acesso: ao entrar, você será solicitado a cadastrar uma nova senha,
                 e só depois disso o sistema será liberado.
 
                 Este é um e-mail automático, não responda.
                 """.formatted(
                 usuario.getNome(),
+                introducao,
                 urlDoSistema,
                 usuario.getCpf(),
                 senha

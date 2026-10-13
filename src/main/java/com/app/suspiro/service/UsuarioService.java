@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.app.suspiro.dto.TrocaDeSenhaRequest;
 import com.app.suspiro.dto.UsuarioCadastroRequest;
 import com.app.suspiro.enums.Perfil;
+import com.app.suspiro.exception.RecursoNaoEncontradoException;
 import com.app.suspiro.exception.RegraDeNegocioException;
 import com.app.suspiro.model.UsuariosModel;
 import com.app.suspiro.repository.UsuariosRepository;
@@ -153,6 +154,31 @@ public class UsuarioService implements UserDetailsService {
         usuario.setSenhaProvisoria(false);
 
         usuariosRepository.save(usuario);
+    }
+
+    // Gera uma nova senha provisória e envia por e-mail; no próximo login o
+    // usuário cai no mesmo fluxo de troca obrigatória do primeiro acesso.
+    // Usuário inativo ou sem e-mail é ignorado sem erro.
+    @Transactional
+    public void redefinirSenha(String cpf) {
+
+        UsuariosModel usuario = usuariosRepository.findByCpf(cpf)
+                .orElseThrow(() ->
+                        new RecursoNaoEncontradoException("CPF não cadastrado")
+                );
+
+        if (!usuario.isAtivo() || usuario.getEmail() == null) {
+            return;
+        }
+
+        String senha = GeradorDeSenha.gerar();
+
+        usuario.setSenha(passwordEncoder.encode(senha));
+        usuario.setSenhaProvisoria(true);
+
+        usuariosRepository.save(usuario);
+
+        emailService.enviarRedefinicaoDeSenha(usuario, senha);
     }
 
     private void validarHierarquia(Perfil perfilDoCriador, Perfil perfilDesejado) {

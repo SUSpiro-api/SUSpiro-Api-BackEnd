@@ -44,8 +44,7 @@ public class GlobalExceptionHandler {
 
         return montarResposta(
                 HttpStatus.SERVICE_UNAVAILABLE,
-                "Não foi possível enviar o e-mail de primeiro acesso. "
-                        + "O cadastro não foi concluído, tente novamente."
+                ex.getMessage() + ". Nada foi alterado, tente novamente."
         );
     }
 

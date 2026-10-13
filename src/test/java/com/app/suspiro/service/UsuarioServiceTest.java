@@ -33,6 +33,7 @@ import com.app.suspiro.dto.TrocaDeSenhaRequest;
 import com.app.suspiro.dto.UsuarioCadastroRequest;
 import com.app.suspiro.enums.Perfil;
 import com.app.suspiro.exception.EnvioDeEmailException;
+import com.app.suspiro.exception.RecursoNaoEncontradoException;
 import com.app.suspiro.exception.RegraDeNegocioException;
 import com.app.suspiro.model.UsuariosModel;
 import com.app.suspiro.repository.UsuariosRepository;
@@ -312,5 +313,65 @@ class UsuarioServiceTest {
 
         assertTrue(resultado.isEmpty());
         verify(repository, never()).findByPerfilIn(any(), any());
+    }
+
+    @Test
+    void redefinirSenhaGeraNovaSenhaProvisoriaEEnviaPorEmail() {
+
+        UsuariosModel usuario = usuarioComSenha("senha-antiga");
+        usuario.setSenhaProvisoria(false);
+
+        service.redefinirSenha("12345678901");
+
+        ArgumentCaptor<String> senha = ArgumentCaptor.forClass(String.class);
+        verify(emailService).enviarRedefinicaoDeSenha(eq(usuario), senha.capture());
+
+        assertTrue(usuario.isSenhaProvisoria());
+        assertTrue(passwordEncoder.matches(senha.getValue(), usuario.getSenha()));
+        assertFalse(passwordEncoder.matches("senha-antiga", usuario.getSenha()));
+    }
+
+    @Test
+    void redefinirSenhaDeCpfInexistenteInformaQueNaoExiste() {
+
+        when(repository.findByCpf("00000000000")).thenReturn(Optional.empty());
+
+        RecursoNaoEncontradoException erro = assertThrows(RecursoNaoEncontradoException.class,
+                () -> service.redefinirSenha("00000000000"));
+
+        assertEquals("CPF não cadastrado", erro.getMessage());
+        verify(repository, never()).save(any());
+        verify(emailService, never()).enviarRedefinicaoDeSenha(any(), anyString());
+    }
+
+    @Test
+    void redefinirSenhaIgnoraUsuarioInativoOuSemEmail() {
+
+        UsuariosModel inativo = usuarioComSenha("senha-antiga");
+        inativo.setSenhaProvisoria(false);
+        inativo.setAtivo(false);
+
+        service.redefinirSenha("12345678901");
+
+        inativo.setAtivo(true);
+        inativo.setEmail(null);
+
+        service.redefinirSenha("12345678901");
+
+        verify(repository, never()).save(any());
+        verify(emailService, never()).enviarRedefinicaoDeSenha(any(), anyString());
+        assertFalse(inativo.isSenhaProvisoria());
+    }
+
+    @Test
+    void redefinirSenhaPropagaFalhaDeEmailParaDesfazerATransacao() {
+
+        usuarioComSenha("senha-antiga");
+
+        Mockito.doThrow(new EnvioDeEmailException("falhou", null))
+                .when(emailService).enviarRedefinicaoDeSenha(any(), anyString());
+
+        assertThrows(EnvioDeEmailException.class,
+                () -> service.redefinirSenha("12345678901"));
     }
 }
