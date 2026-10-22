@@ -1,7 +1,11 @@
 package com.app.suspiro.security;
 
+import java.nio.charset.StandardCharsets;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
@@ -67,6 +71,18 @@ public class SecurityConfig {
             .cors(Customizer.withDefaults())
 
             .authenticationProvider(authenticationProvider())
+
+            // Sem autenticação (ou token inválido/expirado) responde 401, e não o 403
+            // padrão, para o cliente saber que precisa entrar novamente.
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+                    response.getWriter().write(
+                            "{\"status\":401,\"mensagem\":\"Autenticação necessária\"}");
+                })
+            )
 
             .authorizeHttpRequests(auth -> auth
 
