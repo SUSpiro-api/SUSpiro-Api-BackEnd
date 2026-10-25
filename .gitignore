@@ -1,0 +1,49 @@
+# =========================
+# Ambiente / Secrets
+# =========================
+
+.env
+.env.*
+!.env.exemplo
+
+
+# =========================
+# Maven
+# =========================
+
+target/
+.mvn/wrapper/maven-wrapper.jar
+
+
+# =========================
+# Spring Boot
+# =========================
+
+spring.log
+*.log
+
+
+
+
+# =========================
+# NetBeans
+# =========================
+
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+
+# =========================
+# VS Code
+# =========================
+
+.vscode/
+# Local secrets and build artifacts
+.env
+.env.*.local
+node_modules/
+target/
+dist/
