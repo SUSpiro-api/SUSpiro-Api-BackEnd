@@ -1,0 +1,21 @@
+# Variáveis locais e segredos
+.env
+.env.*
+!.env.exemplo
+
+# Dependências e artefatos
+target/
+node_modules/
+dist/
+coverage/
+*.log
+
+# IDEs e ferramentas locais
+.vscode/
+.idea/
+/nbproject/private/
+/nbbuild/
+/nbdist/
+/.nb-gradle/
+spring.log
+.DS_Store
