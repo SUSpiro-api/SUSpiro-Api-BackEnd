@@ -1,0 +1,89 @@
+spring:
+  application:
+    name: suspiro
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:5}
+      minimum-idle: ${DB_POOL_MIN_IDLE:1}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:30000}
+      idle-timeout: ${DB_IDLE_TIMEOUT_MS:600000}
+      max-lifetime: ${DB_MAX_LIFETIME_MS:1800000}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  mail:
+    # O SMTP pode ficar sem configuração durante o primeiro deploy.
+    # O EmailService impede tentativas de envio enquanto faltarem credenciais.
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      "[mail.smtp.auth]": true
+      "[mail.smtp.starttls.enable]": true
+      "[mail.smtp.connectiontimeout]": 5000
+      "[mail.smtp.timeout]": 5000
+      "[mail.smtp.writetimeout]": 5000
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    baseline-on-migrate: false
+    out-of-order: false
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+suspiro:
+  auth:
+    login:
+      max-failed-attempts: ${AUTH_LOGIN_MAX_FAILED_ATTEMPTS:5}
+      lock-duration-minutes: ${AUTH_LOGIN_LOCK_DURATION_MINUTES:15}
+  guias:
+    notificacoes:
+      batch-size: ${GUIAS_NOTIFICACAO_BATCH_SIZE:100}
+      max-items-per-cycle: ${GUIAS_NOTIFICACAO_MAX_ITENS_POR_CICLO:1000}
+      retry-minutes: ${GUIAS_NOTIFICACAO_RETRY_MINUTES:60}
+
+server:
+  # O Render define PORT automaticamente. SERVER_PORT continua disponível no ambiente local.
+  port: ${PORT:${SERVER_PORT:8080}}
+  address: 0.0.0.0
+  forward-headers-strategy: framework
+  shutdown: graceful
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+
+management:
+  endpoint:
+    health:
+      show-details: never
+  health:
+    # SMTP é uma integração externa opcional e não deve derrubar o health check da API.
+    mail:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+    path: /api-docs
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
+    path: /swagger-ui.html
+    operationsSorter: method
+
+logging:
+  level:
+    org.springframework.security: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN
